@@ -1,6 +1,8 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -61,6 +63,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-serif: "Instrument Serif", serif;
 }
 
 :root {
@@ -145,14 +149,12 @@
     color-mix(in oklab, var(--primary) 60%, oklch(0.5 0.2 180))
   );
 
-  --glow-success: 0 0 40px color-mix(in oklab, var(--primary) 45%, transparent),
-    0 0 80px color-mix(in oklab, var(--primary) 20%, transparent);
-  --glow-emergency: 0 0 40px color-mix(in oklab, var(--emergency) 50%, transparent),
-    0 0 80px color-mix(in oklab, var(--emergency) 25%, transparent);
-  --glow-soft: 0 8px 32px color-mix(in oklab, black 50%, transparent);
+  --glow-success: 0 4px 24px color-mix(in oklab, var(--primary) 10%, transparent);
+  --glow-emergency: 0 4px 24px color-mix(in oklab, var(--emergency) 10%, transparent);
+  --glow-soft: none;
 
-  --glass-bg: color-mix(in oklab, white 4%, transparent);
-  --glass-border: color-mix(in oklab, white 10%, transparent);
+  --glass-bg: color-mix(in oklab, white 2%, transparent);
+  --glass-border: color-mix(in oklab, white 5%, transparent);
 
   --transition-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -172,7 +174,8 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -225,6 +228,26 @@
     background-size: 56px 56px;
     mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 40%, transparent 80%);
     animation: slide-grid 5s linear infinite;
+  }
+
+  /* 🔥 PREMIUM GLASS SYSTEM */
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(12px);
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.01);
+    backdrop-filter: blur(24px);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.02);
+  }
+
+  /* HERO GRADIENT */
+  .hero-overlay {
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8));
   }
 }
 
@@ -315,6 +338,16 @@
   }
 }
 
+@keyframes scan-line {
+  0% { transform: translateY(-100%); opacity: 0; }
+  50% { opacity: 0.3; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+.animate-scan-line {
+  animation: scan-line 4s linear infinite;
+}
+
 @keyframes ekg {
   0% {
     stroke-dashoffset: 1000;
@@ -390,4 +423,42 @@
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }
+}
+
+/* TEXT BALANCE */
+h1, h2 {
+  text-wrap: balance;
+}
+
+/* SMOOTH RENDER */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* PREMIUM TRANSITIONS */
+button, .glass-card {
+  transition: all 0.25s ease;
+}
+
+/* SUBTLE GLOW ON HOVER */
+.glass-card:hover {
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.05);
+}
+
+/* BUTTON FEEDBACK */
+button:active {
+  transform: scale(0.96);
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 1s ease forwards;
 }

@@ -1,112 +1,79 @@
 import { motion } from "framer-motion";
-import { Heart, Siren, ArrowRight } from "lucide-react";
-import { Link } from "@tanstack/react-router";
-import { FallingDrops } from "./FallingDrops";
-import { EkgLine } from "./EkgLine";
-import { lazy, Suspense } from "react";
 
-const DonationBox3D = lazy(() => import("./DonationBox3D").then((m) => ({ default: m.DonationBox3D })));
-
+/**
+ * Premium Cinematic Hero
+ * - bg-transparent → global canvas shows through
+ * - NO local hero-overlay (global overlay at z-1 handles contrast)
+ * - Content at relative z-10 (within the z-2 content wrapper)
+ */
 export function Hero() {
   return (
-    <section
-      className="relative flex min-h-screen items-center justify-center overflow-hidden pt-24"
-      style={{ background: "var(--gradient-hero)" }}
-    >
-      <div className="absolute inset-0 grid-bg" />
-      <FallingDrops />
+    <section className="relative min-h-screen flex items-center justify-center text-center bg-transparent">
 
-      <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
+      {/* Subtle bottom fade (helps text transition into next section) */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+
+      {/* CONTENT */}
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+        className="relative z-10 px-6 max-w-6xl"
+      >
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-4 py-1.5 text-xs text-muted-foreground backdrop-blur"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="mb-8 inline-flex items-center gap-2 liquid-glass px-4 py-1.5 text-xs text-white/50 tracking-widest uppercase"
         >
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
           </span>
-          Real-time donor matching · 24/7 emergency network
+          Next-Gen Medical Network
         </motion.div>
 
         <motion.h1
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 60 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.1 }}
-          className="text-5xl font-semibold tracking-tight sm:text-6xl md:text-7xl"
+          transition={{ duration: 1 }}
+          className="text-6xl md:text-8xl lg:text-9xl font-light tracking-tight leading-[1.05]"
         >
-          Every drop.
-          <br />
-          <span className="text-gradient-success">Saves a life.</span>
+          From hours to <span className="italic font-serif text-white/60">minutes</span>
         </motion.h1>
 
         <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2 }}
-          className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.5 }}
+          className="mt-6 text-lg md:text-xl text-white/60 max-w-2xl mx-auto"
         >
-          LifeLink is the smart blood &amp; organ donation network connecting hospitals with
-          verified donors in seconds — privacy-first, geo-matched, life-saving.
+          LifeLink connects critical emergencies with verified donors in real time—when every second matters.
+        </motion.p>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.7 }}
+          className="mt-4 text-sm text-white/40"
+        >
+          Trusted by hospitals. Built for real-time response.
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.3 }}
-          className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
+          transition={{ duration: 0.8, delay: 1 }}
+          className="mt-24 md:mt-32 flex flex-col sm:flex-row items-center justify-center gap-6"
         >
-          <Link to="/auth" className="group inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-all hover:shadow-[var(--glow-success)]">
-            <Heart className="h-4 w-4" fill="currentColor" />
-            Become a Donor
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-          <Link to="/auth" className="group inline-flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-6 py-3.5 text-sm font-semibold text-destructive-foreground backdrop-blur transition-all hover:bg-destructive/20 hover:shadow-[var(--glow-emergency)]">
-            <Siren className="h-4 w-4 animate-heartbeat" />
-            Emergency Request
-          </Link>
+          <button className="bg-white text-black px-8 py-4 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:scale-105 transition font-medium">
+            Save a Life →
+          </button>
+          <button className="glass-card px-8 py-4 rounded-full text-white/80 hover:bg-white/5 transition border border-white/10">
+            Request Emergency
+          </button>
         </motion.div>
-
-        {/* Heart pulse + EKG */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.6 }}
-          className="mt-16 flex items-center justify-center gap-6"
-        >
-          <div className="relative">
-            <span className="absolute inset-0 animate-pulse-ring rounded-full bg-primary/30" />
-            <span
-              className="absolute inset-0 animate-pulse-ring rounded-full bg-primary/20"
-              style={{ animationDelay: "1s" }}
-            />
-            <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 backdrop-blur">
-              <Heart
-                className="h-6 w-6 animate-heartbeat text-primary"
-                fill="currentColor"
-              />
-            </div>
-          </div>
-          <div className="h-12 w-64 sm:w-96">
-            <EkgLine className="h-full w-full" />
-          </div>
-        </motion.div>
-
-        {/* 3D donation box */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="mt-12"
-        >
-          <Suspense fallback={<div className="h-[420px] flex items-center justify-center text-xs text-muted-foreground">Loading 3D scene…</div>}>
-            <DonationBox3D />
-          </Suspense>
-          <p className="mt-2 text-xs text-muted-foreground">Move your cursor — every drop reaches the box, every box reaches a hospital.</p>
-        </motion.div>
-      </div>
+      </motion.div>
     </section>
   );
 }

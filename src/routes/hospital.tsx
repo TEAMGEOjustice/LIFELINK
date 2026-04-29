@@ -14,7 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, AlertTriangle, MapPin, Plus, Users, CheckCircle, XCircle } from "lucide-react";
+import { Activity, AlertTriangle, MapPin, Plus, Users, CheckCircle, XCircle, Siren, Play, Pause, Radio, Waves, Route as RouteIcon } from "lucide-react";
+import { useSimulationStore } from "@/store/simulationStore";
+import { useMapInit } from "@/hooks/useMapInit";
+import { MapSection } from "@/components/MapSection";
 
 export const Route = createFileRoute("/hospital")({
   component: () => (
@@ -64,6 +67,12 @@ function HospitalDashboard() {
   const [donorNames, setDonorNames] = useState<Record<string, string>>({});
   const [organPledges, setOrganPledges] = useState<OrganPledgeRow[]>([]);
   const [creating, setCreating] = useState(false);
+  const matchingState = useSimulationStore((s) => s.animations.routing ? "matching" : "idle"); // Simplified for now
+  const [aiLogs, setAiLogs] = useState<string[]>([]);
+  const { setSearchRadius, addEmergency, highlightMatchedDonors } = useSimulationStore();
+
+  // 🗺 Seed real Bangalore hospitals + donors + demo emergency
+  useMapInit(hospital?.latitude && hospital?.longitude ? { latitude: hospital.latitude, longitude: hospital.longitude } : undefined);
 
   // Donation confirm dialog state
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -150,7 +159,19 @@ function HospitalDashboard() {
     if (!user || !hospital?.latitude || !hospital?.longitude) {
       return toast.error("Hospital location missing — update your profile");
     }
+    const hospLoc = { latitude: hospital.latitude, longitude: hospital.longitude };
     setCreating(true);
+    setMatchingState("matching");
+    setAiLogs([`> Initializing LifeLink AI Engine...`]);
+    await new Promise(r => setTimeout(r, 600));
+    setAiLogs(p => [...p, `> Scanning 15km radius from ${hospital?.hospital_name || 'Hospital'}...`]);
+    setSearchRadius({ center: hospLoc, radiusKm: 15 });
+    await new Promise(r => setTimeout(r, 800));
+    setAiLogs(p => [...p, `> Found active profiles. Filtering for ${form.blood_group}...`]);
+    highlightMatchedDonors(form.blood_group, hospLoc);
+    await new Promise(r => setTimeout(r, 800));
+    setAiLogs(p => [...p, `> Applying Trust Score heuristics...`]);
+
     const { data: created, error } = await supabase
       .from("emergency_requests")
       .insert({
@@ -167,11 +188,29 @@ function HospitalDashboard() {
 
     if (error || !created) {
       setCreating(false);
+      setMatchingState("idle");
       return toast.error(error?.message ?? "Failed to create");
     }
 
+    await new Promise(r => setTimeout(r, 600));
+    setAiLogs(p => [...p, `> Optimal targets identified. Dispatching secure alerts...`]);
+
     const { data: count, error: rpcErr } = await supabase.rpc("notify_matched_donors", { _emergency_id: created.id });
+    
+    await new Promise(r => setTimeout(r, 1200));
     setCreating(false);
+    setMatchingState("idle");
+    setAiLogs([]);
+    setSearchRadius(null);
+    addEmergency({
+      id: created.id,
+      blood_group: form.blood_group,
+      units_required: form.units_required,
+      urgency: form.urgency_level as 'critical'|'high'|'medium'|'low',
+      location: hospLoc,
+      created_at: Date.now()
+    });
+
     if (rpcErr) {
       toast.error(rpcErr.message);
     } else if (count === 0) {
@@ -212,198 +251,185 @@ function HospitalDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardNav title="Hospital dashboard" />
-      <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
+    <div className={`min-h-screen ${matchingState === "matching" ? "bg-black text-green-500 overflow-hidden" : "bg-background"}`}>
+      {matchingState === "matching" && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 text-green-500 p-6">
+          <div className="w-full max-w-3xl space-y-8">
+            <div className="flex items-center justify-center">
+              <div className="relative flex size-40 items-center justify-center">
+                <div className="absolute inset-0 rounded-full border border-green-500/30" />
+                <div className="absolute inset-4 rounded-full border border-green-500/20" />
+                <div className="absolute inset-8 rounded-full border border-green-500/10" />
+                <motion.div 
+                  animate={{ rotate: 360 }} 
+                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                  className="absolute inset-0 rounded-full border-t-2 border-green-500 border-r-2 border-r-transparent border-l-2 border-l-transparent border-b-2 border-b-transparent opacity-60"
+                />
+                <Activity className="size-10 animate-pulse text-green-400" />
+              </div>
+            </div>
+            
+            <div className="font-mono text-sm sm:text-base bg-black/50 p-6 rounded-lg border border-green-500/30 min-h-[200px] shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+              <h3 className="mb-4 text-green-400 font-bold border-b border-green-500/30 pb-2 flex items-center gap-2">
+                <AlertTriangle className="size-4" /> LIFELINK COMMAND CENTER
+              </h3>
+              <div className="space-y-2">
+                {aiLogs.map((log, idx) => (
+                  <motion.div 
+                    key={idx} 
+                    initial={{ opacity: 0, x: -10 }} 
+                    animate={{ opacity: 1, x: 0 }}
+                  >
+                    {log}
+                  </motion.div>
+                ))}
+                <motion.div 
+                  animate={{ opacity: [1, 0] }} 
+                  transition={{ repeat: Infinity, duration: 0.8 }}
+                  className="inline-block w-2 h-4 bg-green-500 ml-1 translate-y-1"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!matchingState || matchingState !== "matching" ? <DashboardNav title="Hospital dashboard" /> : null}
+      <div className="mx-auto max-w-[1600px] space-y-6 p-4 sm:p-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{hospital?.hospital_name ?? "Hospital"}</h1>
           <p className="text-sm text-muted-foreground">Manage emergency requests and organ pledges in real time.</p>
         </div>
 
-        <Tabs defaultValue="emergencies" className="w-full space-y-6">
-          <TabsList className="grid w-[300px] grid-cols-2">
-            <TabsTrigger value="emergencies">Blood Emergencies</TabsTrigger>
-            <TabsTrigger value="organs">Organ Pledges</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="emergencies" className="space-y-6">
-            {/* Create Emergency Card */}
-            <Card className="glass">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Plus className="size-5" /> Raise emergency request
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={createEmergency} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="space-y-2">
-                <Label>Blood group</Label>
-                <Select value={form.blood_group} onValueChange={(v) => setForm({ ...form, blood_group: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {BLOOD_GROUPS.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Units</Label>
-                <Input type="number" min={1} max={50} value={form.units_required} onChange={(e) => setForm({ ...form, units_required: parseInt(e.target.value) || 1 })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Urgency</Label>
-                <Select value={form.urgency_level} onValueChange={(v) => setForm({ ...form, urgency_level: v as (typeof URGENCY)[number] })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {URGENCY.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Patient info (optional)</Label>
-                <Input value={form.patient_info} onChange={(e) => setForm({ ...form, patient_info: e.target.value })} placeholder="Brief note" maxLength={200} />
-              </div>
-              <div className="sm:col-span-2 lg:col-span-4">
-                <Button type="submit" disabled={creating} className="w-full sm:w-auto">
-                  {creating ? "Matching donors…" : "Raise emergency & notify donors"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Emergencies List */}
-        <div className="space-y-4">
-          <h2 className="flex items-center gap-2 text-lg sm:text-xl font-semibold">
-            <Activity className="size-5" /> Active & past emergencies
-          </h2>
-          {emergencies.length === 0 && <p className="text-sm text-muted-foreground">No emergencies raised yet.</p>}
-          <AnimatePresence>
-            {emergencies.map((er) => {
-              const resp = responses[er.id] ?? [];
-              const accepted = resp.filter((r) => r.status === "accepted").length;
-              const rejected = resp.filter((r) => r.status === "rejected").length;
-              return (
-                <motion.div
-                  key={er.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  layout
-                >
-                  <Card className={`glass ${er.status === "open" ? "border-destructive/40" : er.status === "in_progress" ? "border-primary/40" : ""}`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-                            <span className="text-gradient-emergency font-bold">{er.blood_group}</span>
-                            <span className="text-muted-foreground">·</span>
-                            <span>{er.units_required} units</span>
-                            <span className="text-muted-foreground">·</span>
-                            <span className={urgencyColor(er.urgency_level)}>{er.urgency_level}</span>
-                          </CardTitle>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {new Date(er.created_at).toLocaleString()} · {er.patient_info ?? "—"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={er.status === "open" ? "destructive" : er.status === "in_progress" ? "default" : "secondary"}>
-                            {er.status}
-                          </Badge>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* LEFT COLUMN: Emergency Feed */}
+          <div className="lg:col-span-3 space-y-4">
+            <h2 className="flex items-center gap-2 text-lg sm:text-xl font-semibold">
+              <Activity className="size-5 text-red-500" /> Live Feed
+            </h2>
+            <div className="space-y-4 h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+              {emergencies.length === 0 && <p className="text-sm text-muted-foreground">No emergencies raised yet.</p>}
+              <AnimatePresence>
+                {emergencies.map((er) => {
+                  const resp = responses[er.id] ?? [];
+                  const accepted = resp.filter((r) => r.status === "accepted").length;
+                  return (
+                    <motion.div
+                      key={er.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      layout
+                    >
+                      <Card className={`glass-card ${er.status === "open" ? "border-destructive/40" : er.status === "in_progress" ? "border-primary/40" : ""}`}>
+                        <CardHeader className="p-3 pb-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="text-gradient-emergency font-bold text-lg">{er.blood_group}</span>
+                              <p className="text-xs text-muted-foreground">{er.units_required} units • {er.urgency_level}</p>
+                            </div>
+                            <Badge variant={er.status === "open" ? "destructive" : "secondary"} className="text-[10px]">{er.status}</Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-0">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                            <span className="flex items-center gap-1"><Users className="size-3" /> {resp.length} matched</span>
+                            <span className="flex items-center gap-1 text-primary"><CheckCircle className="size-3" /> {accepted} accepted</span>
+                          </div>
                           {er.status !== "closed" && er.status !== "cancelled" && (
-                            <Button size="sm" variant="outline" onClick={() => openCloseDialog(er)}>
-                              Close & confirm
+                            <Button size="sm" variant="outline" className="w-full mt-3 h-7 text-xs" onClick={() => openCloseDialog(er)}>
+                              Manage Match
                             </Button>
                           )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mb-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1"><Users className="size-4" /> {resp.length} matched</span>
-                        <span className="flex items-center gap-1 text-primary"><CheckCircle className="size-3.5" /> {accepted} accepted</span>
-                        {rejected > 0 && (
-                          <span className="flex items-center gap-1 text-destructive"><XCircle className="size-3.5" /> {rejected} declined</span>
-                        )}
-                      </div>
-                      {resp.length === 0 && <p className="text-xs text-muted-foreground">No donor responses yet.</p>}
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {resp.map((r) => (
-                          <div key={r.id} className="flex items-center justify-between rounded-lg border border-border/40 bg-surface px-3 py-2 text-sm">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                                {(donorNames[r.user_id] ?? "D")[0]}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-medium truncate">{donorNames[r.user_id] ?? "Donor"}</div>
-                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                                  <MapPin className="size-3" /> {r.distance_km?.toFixed(1) ?? "—"} km
-                                </span>
-                              </div>
-                            </div>
-                            <Badge
-                              variant={r.status === "accepted" ? "default" : r.status === "rejected" ? "secondary" : "outline"}
-                              className="shrink-0 ml-2"
-                            >
-                              {r.status}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
-        </TabsContent>
-
-        <TabsContent value="organs" className="space-y-6">
-          <div className="space-y-4">
-            <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
-              <Users className="size-5" /> Organ Pledges for {hospital?.hospital_name ?? "Hospital"}
-            </h2>
-            {organPledges.length === 0 && <p className="text-sm text-muted-foreground">No organ pledges directed to your hospital yet.</p>}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {organPledges.map((p) => (
-                <Card key={p.id} className="glass">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div className="font-semibold text-lg truncate">{p.profiles?.name || "Unknown Donor"}</div>
-                      <Badge variant={p.status === "registered" ? "default" : "secondary"}>{p.status}</Badge>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {p.organs.map((o) => (
-                        <Badge key={o} variant="outline" className="text-[10px] uppercase">{o.replace("_", " ")}</Badge>
-                      ))}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">Phone: </span>{p.profiles?.phone || "N/A"}
-                    </div>
-                    {p.medical_notes && (
-                      <div className="text-xs text-muted-foreground bg-surface/50 p-2 rounded-md border border-border/40">
-                        {p.medical_notes}
-                      </div>
-                    )}
-                    <div className="pt-2 flex flex-wrap gap-2">
-                      {p.status === "registered" && (
-                        <Button size="sm" onClick={() => updatePledgeStatus(p.id, "approved")} className="w-full bg-success text-success-foreground hover:bg-success/90">
-                          Approve Pledge
-                        </Button>
-                      )}
-                      {p.status === "approved" && (
-                        <Button size="sm" onClick={() => updatePledgeStatus(p.id, "transplanted")} className="w-full bg-primary/20 text-primary border border-primary/50 hover:bg-primary/30">
-                          Mark Transplanted
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
           </div>
-        </TabsContent>
-      </Tabs>
+
+          {/* CENTER COLUMN: Live Map */}
+          <div className="lg:col-span-6">
+             <MapSection 
+                centerCoords={hospital?.latitude && hospital?.longitude ? { latitude: hospital.latitude, longitude: hospital.longitude } : undefined} 
+                role="hospital" 
+             />
+          </div>
+
+          {/* RIGHT COLUMN: Action Panel */}
+          <div className="lg:col-span-3 space-y-6">
+            <Tabs defaultValue="emergencies" className="w-full space-y-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="emergencies">New Alert</TabsTrigger>
+                <TabsTrigger value="organs">Pledges</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="emergencies" className="space-y-4">
+                <Card className="glass-card border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base text-red-500">
+                      <Siren className="size-5" /> Broadcast Emergency
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={createEmergency} className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Blood group</Label>
+                        <Select value={form.blood_group} onValueChange={(v) => setForm({ ...form, blood_group: v })}>
+                          <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {BLOOD_GROUPS.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Units</Label>
+                          <Input className="h-8" type="number" min={1} max={50} value={form.units_required} onChange={(e) => setForm({ ...form, units_required: parseInt(e.target.value) || 1 })} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Urgency</Label>
+                          <Select value={form.urgency_level} onValueChange={(v) => setForm({ ...form, urgency_level: v as (typeof URGENCY)[number] })}>
+                            <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {URGENCY.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <Button type="submit" disabled={creating} className="w-full bg-red-600 hover:bg-red-700 text-white mt-4 font-bold shadow-[0_0_10px_rgba(220,38,38,0.5)] transition-all hover:scale-[1.02]">
+                        {creating ? "MATCHING DONORS…" : "INITIATE AI MATCH"}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="organs" className="space-y-4">
+                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                  {organPledges.length === 0 && <p className="text-sm text-muted-foreground">No pledges yet.</p>}
+                  {organPledges.map((p) => (
+                    <Card key={p.id} className="glass-card">
+                      <CardContent className="p-3 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <div className="font-semibold text-sm truncate">{p.profiles?.name || "Unknown"}</div>
+                          <Badge variant={p.status === "registered" ? "default" : "secondary"} className="text-[10px]">{p.status}</Badge>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {p.organs.map((o) => (
+                            <Badge key={o} variant="outline" className="text-[9px] uppercase">{o.replace("_", " ")}</Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </div>
 
       {/* Donation confirm dialog */}

@@ -6,6 +6,7 @@ import { ImpactCounter } from "@/components/ImpactCounter";
 import { Benefits } from "@/components/Benefits";
 import { EmergencyDemo } from "@/components/EmergencyDemo";
 import { CtaFooter } from "@/components/CtaFooter";
+import { ProtocolAnimation } from "@/components/ProtocolAnimation";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,14 +30,23 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
-      <Navbar />
-      <Hero />
-      <HowItWorks />
-      <ImpactCounter />
-      <Benefits />
-      <EmergencyDemo />
-      <CtaFooter />
-    </main>
+    <>
+      {/* Layer 0+1 — PERSISTENT BACKGROUND (fixed, behind everything) */}
+      <ProtocolAnimation />
+
+      {/* Layer 2 — ALL CONTENT (scrolls naturally over canvas) */}
+      <div
+        className="relative opacity-0 animate-[fadeIn_1s_ease_forwards]"
+        style={{ zIndex: 2 }}
+      >
+        <Navbar />
+        <Hero />
+        <HowItWorks />
+        <ImpactCounter />
+        <Benefits />
+        <EmergencyDemo />
+        <CtaFooter />
+      </div>
+    </>
   );
 }
