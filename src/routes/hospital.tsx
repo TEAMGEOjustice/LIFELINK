@@ -10,11 +10,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, AlertTriangle, MapPin, Plus, Users, CheckCircle, XCircle } from "lucide-react";
+import { Activity, MapPin, Plus, Users, CheckCircle, XCircle } from "lucide-react";
 import { HospitalPatients } from "@/components/HospitalPatients";
 import { BloodInventory } from "@/components/BloodInventory";
 
@@ -47,24 +53,112 @@ interface NotifRow {
   emergency_id: string | null;
 }
 
-interface OrganPledgeRow {
+interface NottoTrackingRow {
   id: string;
-  user_id: string;
-  organs: string[];
-  consent_given: boolean;
-  status: string;
-  pledged_at: string;
-  medical_notes: string | null;
-  profiles: { name: string; phone: string | null };
+  userName: string;
+  bloodGroup: string;
+  organ: string;
+  city: string;
+  nottoStatus: string;
+  hospitalRequest: string;
+  priority: "low" | "medium" | "high" | "critical";
+  lastUpdated: string;
 }
+
+const MOCK_NOTTO_TRACKING: NottoTrackingRow[] = [
+  {
+    id: "NOTTO-24101",
+    userName: "Aarav Singh",
+    bloodGroup: "O+",
+    organ: "Kidney",
+    city: "Pune",
+    nottoStatus: "Waiting for organ",
+    hospitalRequest: "Pending request",
+    priority: "high",
+    lastUpdated: "2026-04-29T11:20:00Z",
+  },
+  {
+    id: "NOTTO-24102",
+    userName: "Meera Nair",
+    bloodGroup: "A-",
+    organ: "Liver",
+    city: "Bengaluru",
+    nottoStatus: "Verification pending",
+    hospitalRequest: "Awaiting documents",
+    priority: "medium",
+    lastUpdated: "2026-04-30T09:05:00Z",
+  },
+  {
+    id: "NOTTO-24103",
+    userName: "Rohan Patel",
+    bloodGroup: "B+",
+    organ: "Heart",
+    city: "Ahmedabad",
+    nottoStatus: "Pending request",
+    hospitalRequest: "Pending request",
+    priority: "critical",
+    lastUpdated: "2026-04-30T08:10:00Z",
+  },
+  {
+    id: "NOTTO-24104",
+    userName: "Sana Khan",
+    bloodGroup: "AB+",
+    organ: "Lungs",
+    city: "Delhi",
+    nottoStatus: "Registered on NOTTO",
+    hospitalRequest: "Ready for review",
+    priority: "low",
+    lastUpdated: "2026-04-28T16:40:00Z",
+  },
+  {
+    id: "NOTTO-24105",
+    userName: "Karan Iyer",
+    bloodGroup: "O-",
+    organ: "Pancreas",
+    city: "Chennai",
+    nottoStatus: "Waiting for organ",
+    hospitalRequest: "Follow-up needed",
+    priority: "high",
+    lastUpdated: "2026-04-30T10:35:00Z",
+  },
+  {
+    id: "NOTTO-24106",
+    userName: "Nisha Rao",
+    bloodGroup: "A+",
+    organ: "Cornea",
+    city: "Hyderabad",
+    nottoStatus: "Pending request",
+    hospitalRequest: "Pending request",
+    priority: "medium",
+    lastUpdated: "2026-04-30T07:55:00Z",
+  },
+];
+
+const priorityColor: Record<NottoTrackingRow["priority"], string> = {
+  low: "text-slate-400",
+  medium: "text-yellow-400",
+  high: "text-orange-400",
+  critical: "text-red-400",
+};
+
+const requestBadgeVariant = (request: string): "default" | "secondary" | "outline" => {
+  if (request.toLowerCase().includes("pending")) return "secondary";
+  if (request.toLowerCase().includes("ready")) return "default";
+  return "outline";
+};
 
 function HospitalDashboard() {
   const { user } = useAuth();
-  const [hospital, setHospital] = useState<{ name: string; hospital_name: string | null; latitude: number | null; longitude: number | null } | null>(null);
+  const [hospital, setHospital] = useState<{
+    name: string;
+    hospital_name: string | null;
+    latitude: number | null;
+    longitude: number | null;
+  } | null>(null);
   const [emergencies, setEmergencies] = useState<EmergencyRow[]>([]);
   const [responses, setResponses] = useState<Record<string, NotifRow[]>>({});
   const [donorNames, setDonorNames] = useState<Record<string, string>>({});
-  const [organPledges, setOrganPledges] = useState<OrganPledgeRow[]>([]);
+  const nottoRows = MOCK_NOTTO_TRACKING;
   const [creating, setCreating] = useState(false);
 
   // Donation confirm dialog state
@@ -124,13 +218,6 @@ function HospitalDashboard() {
         setDonorNames(names);
       }
     }
-
-    const { data: pledges } = await supabase
-      .from("organ_pledges")
-      .select("*, profiles(name, phone)")
-      .eq("hospital_id", user.id)
-      .order("pledged_at", { ascending: false });
-    setOrganPledges((pledges as any) || []);
   };
 
   useEffect(() => {
@@ -138,8 +225,19 @@ function HospitalDashboard() {
     if (!user) return;
     const ch = supabase
       .channel(`hosp-${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => loadAll())
-      .on("postgres_changes", { event: "*", schema: "public", table: "emergency_requests", filter: `hospital_id=eq.${user.id}` }, () => loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () =>
+        loadAll(),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "emergency_requests",
+          filter: `hospital_id=eq.${user.id}`,
+        },
+        () => loadAll(),
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
@@ -157,7 +255,7 @@ function HospitalDashboard() {
       .from("emergency_requests")
       .insert({
         hospital_id: user.id,
-        blood_group: form.blood_group as typeof BLOOD_GROUPS[number],
+        blood_group: form.blood_group as (typeof BLOOD_GROUPS)[number],
         units_required: form.units_required,
         urgency_level: form.urgency_level,
         patient_info: form.patient_info || null,
@@ -172,14 +270,19 @@ function HospitalDashboard() {
       return toast.error(error?.message ?? "Failed to create");
     }
 
-    const { data: count, error: rpcErr } = await supabase.rpc("notify_matched_donors", { _emergency_id: created.id });
+    const { data: count, error: rpcErr } = await supabase.rpc("notify_matched_donors", {
+      _emergency_id: created.id,
+    });
     setCreating(false);
     if (rpcErr) {
       toast.error(rpcErr.message);
     } else if (count === 0) {
-      toast.warning("Emergency raised but no matching donors found nearby. This could mean:\n• No donors with matching blood group\n• All nearby donors unavailable\n• Donors donated within 90 days", {
-        duration: 8000,
-      });
+      toast.warning(
+        "Emergency raised but no matching donors found nearby. This could mean:\n• No donors with matching blood group\n• All nearby donors unavailable\n• Donors donated within 90 days",
+        {
+          duration: 8000,
+        },
+      );
     } else {
       toast.success(`Emergency raised — notified ${count} donor(s)`);
     }
@@ -197,19 +300,16 @@ function HospitalDashboard() {
     });
   };
 
-  const updatePledgeStatus = async (pledgeId: string, status: string) => {
-    const { error } = await supabase.from("organ_pledges").update({ status }).eq("id", pledgeId);
-    if (error) return toast.error(error.message);
-    toast.success("Pledge status updated");
-    loadAll();
-  };
-
   const urgencyColor = (u: string) => {
     switch (u) {
-      case "critical": return "text-red-400";
-      case "high": return "text-orange-400";
-      case "medium": return "text-yellow-400";
-      default: return "text-blue-400";
+      case "critical":
+        return "text-red-400";
+      case "high":
+        return "text-orange-400";
+      case "medium":
+        return "text-yellow-400";
+      default:
+        return "text-blue-400";
     }
   };
 
@@ -218,14 +318,18 @@ function HospitalDashboard() {
       <DashboardNav title="Hospital dashboard" />
       <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{hospital?.hospital_name ?? "Hospital"}</h1>
-          <p className="text-sm text-muted-foreground">Manage emergency requests and organ pledges in real time.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            {hospital?.hospital_name ?? "Hospital"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Manage emergencies and monitor NOTTO tracking records in real time.
+          </p>
         </div>
 
         <Tabs defaultValue="emergencies" className="w-full space-y-6">
           <TabsList className="grid w-full max-w-[600px] grid-cols-2 sm:grid-cols-4 h-auto py-2 gap-2 sm:gap-0 sm:py-1">
             <TabsTrigger value="emergencies">Emergencies</TabsTrigger>
-            <TabsTrigger value="organs">Organ Pledges</TabsTrigger>
+            <TabsTrigger value="organs">NOTTO Tracking</TabsTrigger>
             <TabsTrigger value="patients">Patients Logs</TabsTrigger>
             <TabsTrigger value="inventory">Blood Bank</TabsTrigger>
           </TabsList>
@@ -233,189 +337,282 @@ function HospitalDashboard() {
           <TabsContent value="emergencies" className="space-y-6">
             {/* Create Emergency Card */}
             <Card className="glass">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Plus className="size-5" /> Raise emergency request
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={createEmergency} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="space-y-2">
-                <Label>Blood group</Label>
-                <Select value={form.blood_group} onValueChange={(v) => setForm({ ...form, blood_group: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {BLOOD_GROUPS.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Units</Label>
-                <Input type="number" min={1} max={50} value={form.units_required} onChange={(e) => setForm({ ...form, units_required: parseInt(e.target.value) || 1 })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Urgency</Label>
-                <Select value={form.urgency_level} onValueChange={(v) => setForm({ ...form, urgency_level: v as (typeof URGENCY)[number] })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {URGENCY.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Patient info (optional)</Label>
-                <Input value={form.patient_info} onChange={(e) => setForm({ ...form, patient_info: e.target.value })} placeholder="Brief note" maxLength={200} />
-              </div>
-              <div className="sm:col-span-2 lg:col-span-4">
-                <Button type="submit" disabled={creating} className="w-full sm:w-auto">
-                  {creating ? "Matching donors…" : "Raise emergency & notify donors"}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Emergencies List */}
-        <div className="space-y-4">
-          <h2 className="flex items-center gap-2 text-lg sm:text-xl font-semibold">
-            <Activity className="size-5" /> Active & past emergencies
-          </h2>
-          {emergencies.length === 0 && <p className="text-sm text-muted-foreground">No emergencies raised yet.</p>}
-          <AnimatePresence>
-            {emergencies.map((er) => {
-              const resp = responses[er.id] ?? [];
-              const accepted = resp.filter((r) => r.status === "accepted").length;
-              const rejected = resp.filter((r) => r.status === "rejected").length;
-              return (
-                <motion.div
-                  key={er.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  layout
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Plus className="size-5" /> Raise emergency request
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form
+                  onSubmit={createEmergency}
+                  className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
                 >
-                  <Card className={`glass ${er.status === "open" ? "border-destructive/40" : er.status === "in_progress" ? "border-primary/40" : ""}`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-                            <span className="text-gradient-emergency font-bold">{er.blood_group}</span>
-                            <span className="text-muted-foreground">·</span>
-                            <span>{er.units_required} units</span>
-                            <span className="text-muted-foreground">·</span>
-                            <span className={urgencyColor(er.urgency_level)}>{er.urgency_level}</span>
-                          </CardTitle>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {new Date(er.created_at).toLocaleString()} · {er.patient_info ?? "—"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={er.status === "open" ? "destructive" : er.status === "in_progress" ? "default" : "secondary"}>
-                            {er.status}
-                          </Badge>
-                          {er.status !== "closed" && er.status !== "cancelled" && (
-                            <Button size="sm" variant="outline" onClick={() => openCloseDialog(er)}>
-                              Close & confirm
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mb-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1"><Users className="size-4" /> {resp.length} matched</span>
-                        <span className="flex items-center gap-1 text-primary"><CheckCircle className="size-3.5" /> {accepted} accepted</span>
-                        {rejected > 0 && (
-                          <span className="flex items-center gap-1 text-destructive"><XCircle className="size-3.5" /> {rejected} declined</span>
-                        )}
-                      </div>
-                      {resp.length === 0 && <p className="text-xs text-muted-foreground">No donor responses yet.</p>}
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {resp.map((r) => (
-                          <div key={r.id} className="flex items-center justify-between rounded-lg border border-border/40 bg-surface px-3 py-2 text-sm">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                                {(donorNames[r.user_id] ?? "D")[0]}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-medium truncate">{donorNames[r.user_id] ?? "Donor"}</div>
-                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                                  <MapPin className="size-3" /> {r.distance_km?.toFixed(1) ?? "—"} km
-                                </span>
-                              </div>
-                            </div>
-                            <Badge
-                              variant={r.status === "accepted" ? "default" : r.status === "rejected" ? "secondary" : "outline"}
-                              className="shrink-0 ml-2"
-                            >
-                              {r.status}
-                            </Badge>
-                          </div>
+                  <div className="space-y-2">
+                    <Label>Blood group</Label>
+                    <Select
+                      value={form.blood_group}
+                      onValueChange={(v) => setForm({ ...form, blood_group: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BLOOD_GROUPS.map((g) => (
+                          <SelectItem key={g} value={g}>
+                            {g}
+                          </SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Units</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={form.units_required}
+                      onChange={(e) =>
+                        setForm({ ...form, units_required: parseInt(e.target.value) || 1 })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Urgency</Label>
+                    <Select
+                      value={form.urgency_level}
+                      onValueChange={(v) =>
+                        setForm({ ...form, urgency_level: v as (typeof URGENCY)[number] })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {URGENCY.map((u) => (
+                          <SelectItem key={u} value={u}>
+                            {u}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Patient info (optional)</Label>
+                    <Input
+                      value={form.patient_info}
+                      onChange={(e) => setForm({ ...form, patient_info: e.target.value })}
+                      placeholder="Brief note"
+                      maxLength={200}
+                    />
+                  </div>
+                  <div className="sm:col-span-2 lg:col-span-4">
+                    <Button type="submit" disabled={creating} className="w-full sm:w-auto">
+                      {creating ? "Matching donors…" : "Raise emergency & notify donors"}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Emergencies List */}
+            <div className="space-y-4">
+              <h2 className="flex items-center gap-2 text-lg sm:text-xl font-semibold">
+                <Activity className="size-5" /> Active & past emergencies
+              </h2>
+              {emergencies.length === 0 && (
+                <p className="text-sm text-muted-foreground">No emergencies raised yet.</p>
+              )}
+              <AnimatePresence>
+                {emergencies.map((er) => {
+                  const resp = responses[er.id] ?? [];
+                  const accepted = resp.filter((r) => r.status === "accepted").length;
+                  const rejected = resp.filter((r) => r.status === "rejected").length;
+                  return (
+                    <motion.div
+                      key={er.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      layout
+                    >
+                      <Card
+                        className={`glass ${er.status === "open" ? "border-destructive/40" : er.status === "in_progress" ? "border-primary/40" : ""}`}
+                      >
+                        <CardHeader className="pb-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+                                <span className="text-gradient-emergency font-bold">
+                                  {er.blood_group}
+                                </span>
+                                <span className="text-muted-foreground">·</span>
+                                <span>{er.units_required} units</span>
+                                <span className="text-muted-foreground">·</span>
+                                <span className={urgencyColor(er.urgency_level)}>
+                                  {er.urgency_level}
+                                </span>
+                              </CardTitle>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {new Date(er.created_at).toLocaleString()} ·{" "}
+                                {er.patient_info ?? "—"}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant={
+                                  er.status === "open"
+                                    ? "destructive"
+                                    : er.status === "in_progress"
+                                      ? "default"
+                                      : "secondary"
+                                }
+                              >
+                                {er.status}
+                              </Badge>
+                              {er.status !== "closed" && er.status !== "cancelled" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openCloseDialog(er)}
+                                >
+                                  Close & confirm
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="mb-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Users className="size-4" /> {resp.length} matched
+                            </span>
+                            <span className="flex items-center gap-1 text-primary">
+                              <CheckCircle className="size-3.5" /> {accepted} accepted
+                            </span>
+                            {rejected > 0 && (
+                              <span className="flex items-center gap-1 text-destructive">
+                                <XCircle className="size-3.5" /> {rejected} declined
+                              </span>
+                            )}
+                          </div>
+                          {resp.length === 0 && (
+                            <p className="text-xs text-muted-foreground">No donor responses yet.</p>
+                          )}
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {resp.map((r) => (
+                              <div
+                                key={r.id}
+                                className="flex items-center justify-between rounded-lg border border-border/40 bg-surface px-3 py-2 text-sm"
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                                    {(donorNames[r.user_id] ?? "D")[0]}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="font-medium truncate">
+                                      {donorNames[r.user_id] ?? "Donor"}
+                                    </div>
+                                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                      <MapPin className="size-3" />{" "}
+                                      {r.distance_km?.toFixed(1) ?? "—"} km
+                                    </span>
+                                  </div>
+                                </div>
+                                <Badge
+                                  variant={
+                                    r.status === "accepted"
+                                      ? "default"
+                                      : r.status === "rejected"
+                                        ? "secondary"
+                                        : "outline"
+                                  }
+                                  className="shrink-0 ml-2"
+                                >
+                                  {r.status}
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="organs" className="space-y-6">
+            <div className="space-y-4">
+              <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+                <Users className="size-5" /> NOTTO Tracking Panel for{" "}
+                {hospital?.hospital_name ?? "Hospital"}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Mock data for testing hospital workflow before live NOTTO integration.
+              </p>
+              {nottoRows.length === 0 && (
+                <p className="text-sm text-muted-foreground">No NOTTO records available.</p>
+              )}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {nottoRows.map((row) => (
+                  <Card key={row.id} className="glass">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="font-semibold text-lg truncate">{row.userName}</div>
+                        <Badge variant={requestBadgeVariant(row.hospitalRequest)}>
+                          {row.hospitalRequest}
+                        </Badge>
+                      </div>
+
+                      <div className="text-sm space-y-1">
+                        <p>
+                          <span className="font-medium">Record: </span>
+                          <span className="text-muted-foreground">{row.id}</span>
+                        </p>
+                        <p>
+                          <span className="font-medium">City: </span>
+                          <span className="text-muted-foreground">{row.city}</span>
+                        </p>
+                        <p>
+                          <span className="font-medium">Blood group: </span>
+                          <span className="text-muted-foreground">{row.bloodGroup}</span>
+                        </p>
+                        <p>
+                          <span className="font-medium">Organ: </span>
+                          <span className="text-muted-foreground">{row.organ}</span>
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-lg border border-border/40 px-3 py-2 text-sm">
+                        <span className="font-medium">NOTTO status</span>
+                        <span className="text-muted-foreground">{row.nottoStatus}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-lg border border-border/40 px-3 py-2 text-sm">
+                        <span className="font-medium">Priority</span>
+                        <span className={priorityColor[row.priority]}>{row.priority}</span>
+                      </div>
+
+                      <div className="text-xs text-muted-foreground">
+                        Last updated: {new Date(row.lastUpdated).toLocaleString()}
                       </div>
                     </CardContent>
                   </Card>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
-        </TabsContent>
-
-        <TabsContent value="organs" className="space-y-6">
-          <div className="space-y-4">
-            <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
-              <Users className="size-5" /> Organ Pledges for {hospital?.hospital_name ?? "Hospital"}
-            </h2>
-            {organPledges.length === 0 && <p className="text-sm text-muted-foreground">No organ pledges directed to your hospital yet.</p>}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {organPledges.map((p) => (
-                <Card key={p.id} className="glass">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div className="font-semibold text-lg truncate">{p.profiles?.name || "Unknown Donor"}</div>
-                      <Badge variant={p.status === "registered" ? "default" : "secondary"}>{p.status}</Badge>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {p.organs.map((o) => (
-                        <Badge key={o} variant="outline" className="text-[10px] uppercase">{o.replace("_", " ")}</Badge>
-                      ))}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">Phone: </span>{p.profiles?.phone || "N/A"}
-                    </div>
-                    {p.medical_notes && (
-                      <div className="text-xs text-muted-foreground bg-surface/50 p-2 rounded-md border border-border/40">
-                        {p.medical_notes}
-                      </div>
-                    )}
-                    <div className="pt-2 flex flex-wrap gap-2">
-                      {p.status === "registered" && (
-                        <Button size="sm" onClick={() => updatePledgeStatus(p.id, "approved")} className="w-full bg-success text-success-foreground hover:bg-success/90">
-                          Approve Pledge
-                        </Button>
-                      )}
-                      {p.status === "approved" && (
-                        <Button size="sm" onClick={() => updatePledgeStatus(p.id, "transplanted")} className="w-full bg-primary/20 text-primary border border-primary/50 hover:bg-primary/30">
-                          Mark Transplanted
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        </TabsContent>
+          </TabsContent>
 
-        <TabsContent value="patients" className="space-y-6">
-          <HospitalPatients hospitalId={user?.id || ""} />
-        </TabsContent>
+          <TabsContent value="patients" className="space-y-6">
+            <HospitalPatients hospitalId={user?.id || ""} />
+          </TabsContent>
 
-        <TabsContent value="inventory" className="space-y-6">
-          <BloodInventory hospitalId={user?.id || ""} />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="inventory" className="space-y-6">
+            <BloodInventory hospitalId={user?.id || ""} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Donation confirm dialog */}

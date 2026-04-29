@@ -112,22 +112,29 @@ function DonorDashboard() {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([loadProfile(), loadNotifications(), loadEmergencyPosts()]).finally(() => setLoading(false));
+    Promise.all([loadProfile(), loadNotifications(), loadEmergencyPosts()]).finally(() =>
+      setLoading(false),
+    );
 
     const channel = supabase
       .channel(`notif-${user.id}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
         (payload) => {
           setNotifications((prev) => [payload.new as NotificationRow, ...prev]);
-          toast.error("🚨 New emergency alert!", { description: (payload.new as NotificationRow).message });
+          toast.error("🚨 New emergency alert!", {
+            description: (payload.new as NotificationRow).message,
+          });
         },
       )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "emergency_requests" },
-        () => loadEmergencyPosts(),
+      .on("postgres_changes", { event: "*", schema: "public", table: "emergency_requests" }, () =>
+        loadEmergencyPosts(),
       )
       .subscribe();
 
@@ -200,7 +207,7 @@ function DonorDashboard() {
 
     if (!newNotif) {
       return toast.error(
-        "Could not match you to this emergency. Ensure your location is set and you haven't donated in the last 90 days."
+        "Could not match you to this emergency. Ensure your location is set and you haven't donated in the last 90 days.",
       );
     }
 
@@ -215,22 +222,34 @@ function DonorDashboard() {
     loadProfile();
   };
 
-  const tier = profile && profile.reward_points >= 500
-    ? "Platinum"
-    : profile && profile.reward_points >= 300
-      ? "Gold"
-      : profile && profile.reward_points >= 150
-        ? "Silver"
-        : "Bronze";
+  const tier =
+    profile && profile.reward_points >= 500
+      ? "Platinum"
+      : profile && profile.reward_points >= 300
+        ? "Gold"
+        : profile && profile.reward_points >= 150
+          ? "Silver"
+          : "Bronze";
 
-  const tierColor = tier === "Platinum" ? "text-cyan-400" : tier === "Gold" ? "text-yellow-400" : tier === "Silver" ? "text-slate-300" : "text-amber-600";
+  const tierColor =
+    tier === "Platinum"
+      ? "text-cyan-400"
+      : tier === "Gold"
+        ? "text-yellow-400"
+        : tier === "Silver"
+          ? "text-slate-300"
+          : "text-amber-600";
 
   const urgencyColor = (u: string) => {
     switch (u) {
-      case "critical": return "bg-red-500/15 text-red-400 border-red-500/30";
-      case "high": return "bg-orange-500/15 text-orange-400 border-orange-500/30";
-      case "medium": return "bg-yellow-500/15 text-yellow-400 border-yellow-500/30";
-      default: return "bg-blue-500/15 text-blue-400 border-blue-500/30";
+      case "critical":
+        return "bg-red-500/15 text-red-400 border-red-500/30";
+      case "high":
+        return "bg-orange-500/15 text-orange-400 border-orange-500/30";
+      case "medium":
+        return "bg-yellow-500/15 text-yellow-400 border-yellow-500/30";
+      default:
+        return "bg-blue-500/15 text-blue-400 border-blue-500/30";
     }
   };
 
@@ -260,8 +279,12 @@ function DonorDashboard() {
       <DashboardNav title="Donor dashboard" />
       <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Hi, {name || "donor"} 👋</h1>
-          <p className="text-sm text-muted-foreground">Every alert here is a chance to save a life.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Hi, {name || "donor"} 👋
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Every alert here is a chance to save a life.
+          </p>
         </div>
 
         {/* Stats Cards */}
@@ -272,8 +295,12 @@ function DonorDashboard() {
               <Droplet className="size-4 text-destructive" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold text-gradient-emergency">{profile?.blood_group ?? "—"}</div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Last: {profile?.last_donation_date ?? "Never"}</p>
+              <div className="text-2xl sm:text-3xl font-bold text-gradient-emergency">
+                {profile?.blood_group ?? "—"}
+              </div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
+                Last: {profile?.last_donation_date ?? "Never"}
+              </p>
             </CardContent>
           </Card>
 
@@ -284,9 +311,15 @@ function DonorDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl sm:text-3xl font-bold">
-                {profile?.is_available ? <span className="text-gradient-success">ON</span> : <span className="text-muted-foreground">OFF</span>}
+                {profile?.is_available ? (
+                  <span className="text-gradient-success">ON</span>
+                ) : (
+                  <span className="text-muted-foreground">OFF</span>
+                )}
               </div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Toggle for emergency matches</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
+                Toggle for emergency matches
+              </p>
             </CardContent>
           </Card>
 
@@ -296,9 +329,12 @@ function DonorDashboard() {
               <Award className="size-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold text-gradient-success">{profile?.reward_points ?? 0}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-gradient-success">
+                {profile?.reward_points ?? 0}
+              </div>
               <Badge variant="secondary" className="mt-1 text-[10px]">
-                <Trophy className={`size-3 mr-1 ${tierColor}`} />{tier}
+                <Trophy className={`size-3 mr-1 ${tierColor}`} />
+                {tier}
               </Badge>
             </CardContent>
           </Card>
@@ -308,12 +344,26 @@ function DonorDashboard() {
               <CardTitle className="text-xs sm:text-sm font-medium">Quick links</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
-              <Link to="/rewards" className="text-xs rounded-lg bg-primary/10 text-primary px-3 py-1.5 hover:bg-primary/20 transition-colors">
+              <Link
+                to="/rewards"
+                className="text-xs rounded-lg bg-primary/10 text-primary px-3 py-1.5 hover:bg-primary/20 transition-colors"
+              >
                 🏅 Rewards
               </Link>
-              <Link to="/organ" className="text-xs rounded-lg bg-primary/10 text-primary px-3 py-1.5 hover:bg-primary/20 transition-colors">
+              <Link
+                to="/organ"
+                className="text-xs rounded-lg bg-primary/10 text-primary px-3 py-1.5 hover:bg-primary/20 transition-colors"
+              >
                 🫀 Organ pledge
               </Link>
+              <a
+                href="https://www.notto.mohfw.gov.in/Admin/Login.aspx"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs rounded-lg bg-primary/10 text-primary px-3 py-1.5 hover:bg-primary/20 transition-colors"
+              >
+                🔐 Login to NOTTO
+              </a>
             </CardContent>
           </Card>
         </div>
@@ -327,7 +377,9 @@ function DonorDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {notifications.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">No alerts yet. Stay available — we'll notify you the moment a match comes in.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No alerts yet. Stay available — we'll notify you the moment a match comes in.
+              </p>
             )}
             <AnimatePresence>
               {notifications.map((n) => (
@@ -354,11 +406,20 @@ function DonorDashboard() {
                     </div>
                     {n.status === "sent" ? (
                       <div className="flex gap-2 shrink-0">
-                        <Button size="sm" onClick={() => respond(n.id, true)}>Accept</Button>
-                        <Button size="sm" variant="outline" onClick={() => respond(n.id, false)}>Decline</Button>
+                        <Button size="sm" onClick={() => respond(n.id, true)}>
+                          Accept
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => respond(n.id, false)}>
+                          Decline
+                        </Button>
                       </div>
                     ) : (
-                      <Badge variant={n.status === "accepted" ? "default" : "secondary"} className="shrink-0">{n.status}</Badge>
+                      <Badge
+                        variant={n.status === "accepted" ? "default" : "secondary"}
+                        className="shrink-0"
+                      >
+                        {n.status}
+                      </Badge>
                     )}
                   </div>
                 </motion.div>
@@ -396,10 +457,14 @@ function DonorDashboard() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{post.hospital_name}</p>
-                        <p className="text-[10px] text-muted-foreground">{timeAgo(post.created_at)}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {timeAgo(post.created_at)}
+                        </p>
                       </div>
                     </div>
-                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${urgencyColor(post.urgency_level)}`}>
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${urgencyColor(post.urgency_level)}`}
+                    >
                       {post.urgency_level}
                     </span>
                   </div>
@@ -408,26 +473,35 @@ function DonorDashboard() {
                       <Droplet className="size-3.5" fill="currentColor" /> {post.blood_group}
                     </span>
                     <span className="text-muted-foreground">·</span>
-                    <span>{post.units_required} unit{post.units_required > 1 ? "s" : ""}</span>
+                    <span>
+                      {post.units_required} unit{post.units_required > 1 ? "s" : ""}
+                    </span>
                     <span className="text-muted-foreground">·</span>
-                    <Badge variant={post.status === "open" ? "destructive" : "default"} className="text-[10px]">
+                    <Badge
+                      variant={post.status === "open" ? "destructive" : "default"}
+                      className="text-[10px]"
+                    >
                       {post.status}
                     </Badge>
                   </div>
                   {post.patient_info && (
-                    <p className="mt-2 text-xs text-muted-foreground line-clamp-1">{post.patient_info}</p>
+                    <p className="mt-2 text-xs text-muted-foreground line-clamp-1">
+                      {post.patient_info}
+                    </p>
                   )}
-                  {profile?.is_available && profile.blood_group === post.blood_group && post.status === "open" && (
-                    <div className="mt-3">
-                      <Button
-                        size="sm"
-                        className="w-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/50"
-                        onClick={() => acceptPublicEmergency(post.id)}
-                      >
-                        Accept Match
-                      </Button>
-                    </div>
-                  )}
+                  {profile?.is_available &&
+                    profile.blood_group === post.blood_group &&
+                    post.status === "open" && (
+                      <div className="mt-3">
+                        <Button
+                          size="sm"
+                          className="w-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/50"
+                          onClick={() => acceptPublicEmergency(post.id)}
+                        >
+                          Accept Match
+                        </Button>
+                      </div>
+                    )}
                 </motion.div>
               ))}
             </div>
