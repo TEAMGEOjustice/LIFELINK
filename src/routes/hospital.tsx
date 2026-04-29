@@ -15,6 +15,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Activity, AlertTriangle, MapPin, Plus, Users, CheckCircle, XCircle } from "lucide-react";
+import { HospitalPatients } from "@/components/HospitalPatients";
+import { BloodInventory } from "@/components/BloodInventory";
 
 export const Route = createFileRoute("/hospital")({
   component: () => (
@@ -221,9 +223,11 @@ function HospitalDashboard() {
         </div>
 
         <Tabs defaultValue="emergencies" className="w-full space-y-6">
-          <TabsList className="grid w-[300px] grid-cols-2">
-            <TabsTrigger value="emergencies">Blood Emergencies</TabsTrigger>
+          <TabsList className="grid w-full max-w-[600px] grid-cols-2 sm:grid-cols-4 h-auto py-2 gap-2 sm:gap-0 sm:py-1">
+            <TabsTrigger value="emergencies">Emergencies</TabsTrigger>
             <TabsTrigger value="organs">Organ Pledges</TabsTrigger>
+            <TabsTrigger value="patients">Patients Logs</TabsTrigger>
+            <TabsTrigger value="inventory">Blood Bank</TabsTrigger>
           </TabsList>
 
           <TabsContent value="emergencies" className="space-y-6">
@@ -402,6 +406,14 @@ function HospitalDashboard() {
               ))}
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="patients" className="space-y-6">
+          <HospitalPatients hospitalId={user?.id || ""} />
+        </TabsContent>
+
+        <TabsContent value="inventory" className="space-y-6">
+          <BloodInventory hospitalId={user?.id || ""} />
         </TabsContent>
       </Tabs>
       </div>

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RewardsRouteImport } from './routes/rewards'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OrganRouteImport } from './routes/organ'
 import { Route as InterHospitalRouteImport } from './routes/inter-hospital'
 import { Route as ImpactRouteImport } from './routes/impact'
@@ -25,6 +26,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const RewardsRoute = RewardsRouteImport.update({
   id: '/rewards',
   path: '/rewards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrganRoute = OrganRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/impact': typeof ImpactRoute
   '/inter-hospital': typeof InterHospitalRoute
   '/organ': typeof OrganRoute
+  '/profile': typeof ProfileRoute
   '/rewards': typeof RewardsRoute
 }
 export interface FileRoutesByTo {
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/impact': typeof ImpactRoute
   '/inter-hospital': typeof InterHospitalRoute
   '/organ': typeof OrganRoute
+  '/profile': typeof ProfileRoute
   '/rewards': typeof RewardsRoute
 }
 export interface FileRoutesById {
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/impact': typeof ImpactRoute
   '/inter-hospital': typeof InterHospitalRoute
   '/organ': typeof OrganRoute
+  '/profile': typeof ProfileRoute
   '/rewards': typeof RewardsRoute
 }
 export interface FileRouteTypes {
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/impact'
     | '/inter-hospital'
     | '/organ'
+    | '/profile'
     | '/rewards'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/impact'
     | '/inter-hospital'
     | '/organ'
+    | '/profile'
     | '/rewards'
   id:
     | '__root__'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/impact'
     | '/inter-hospital'
     | '/organ'
+    | '/profile'
     | '/rewards'
   fileRoutesById: FileRoutesById
 }
@@ -183,6 +195,7 @@ export interface RootRouteChildren {
   ImpactRoute: typeof ImpactRoute
   InterHospitalRoute: typeof InterHospitalRoute
   OrganRoute: typeof OrganRoute
+  ProfileRoute: typeof ProfileRoute
   RewardsRoute: typeof RewardsRoute
 }
 
@@ -193,6 +206,13 @@ declare module '@tanstack/react-router' {
       path: '/rewards'
       fullPath: '/rewards'
       preLoaderRoute: typeof RewardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organ': {
@@ -287,6 +307,7 @@ const rootRouteChildren: RootRouteChildren = {
   ImpactRoute: ImpactRoute,
   InterHospitalRoute: InterHospitalRoute,
   OrganRoute: OrganRoute,
+  ProfileRoute: ProfileRoute,
   RewardsRoute: RewardsRoute,
 }
 export const routeTree = rootRouteImport

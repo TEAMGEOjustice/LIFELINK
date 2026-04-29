@@ -34,6 +34,7 @@ export function DashboardNav({ title }: { title: string }) {
         ]
       : []),
     ...(role === "admin" ? [{ to: "/admin" as const, label: "Monitor" }] : []),
+    { to: "/profile" as const, label: "Profile" },
   ];
 
   return (

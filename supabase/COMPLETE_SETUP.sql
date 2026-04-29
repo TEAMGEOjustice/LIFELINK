@@ -155,6 +155,31 @@ CREATE TABLE IF NOT EXISTS public.organ_requests (
 );
 ALTER TABLE public.organ_requests ENABLE ROW LEVEL SECURITY;
 
+-- ============ HOSPITAL PATIENTS (New) ============
+CREATE TABLE IF NOT EXISTS public.hospital_patients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  hospital_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  blood_group blood_group NOT NULL,
+  last_donation_date DATE,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE public.hospital_patients ENABLE ROW LEVEL SECURITY;
+
+-- ============ BLOOD INVENTORY (New) ============
+CREATE TABLE IF NOT EXISTS public.blood_inventory (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  hospital_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  blood_group blood_group NOT NULL,
+  units_available INTEGER NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(hospital_id, blood_group)
+);
+ALTER TABLE public.blood_inventory ENABLE ROW LEVEL SECURITY;
+
 -- ============ UPDATED_AT TRIGGER ============
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS TRIGGER LANGUAGE plpgsql SET search_path = public
@@ -170,6 +195,10 @@ DROP TRIGGER IF EXISTS trg_pledge_upd ON public.organ_pledges;
 CREATE TRIGGER trg_pledge_upd BEFORE UPDATE ON public.organ_pledges FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 DROP TRIGGER IF EXISTS trg_orgreq_upd ON public.organ_requests;
 CREATE TRIGGER trg_orgreq_upd BEFORE UPDATE ON public.organ_requests FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS trg_hosp_patients_upd ON public.hospital_patients;
+CREATE TRIGGER trg_hosp_patients_upd BEFORE UPDATE ON public.hospital_patients FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+DROP TRIGGER IF EXISTS trg_blood_inv_upd ON public.blood_inventory;
+CREATE TRIGGER trg_blood_inv_upd BEFORE UPDATE ON public.blood_inventory FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- ============ AUTO-CREATE PROFILE ON SIGNUP ============
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -365,6 +394,24 @@ CREATE POLICY "orgreq_insert_hospital" ON public.organ_requests FOR INSERT TO au
 DROP POLICY IF EXISTS "orgreq_update_hospital_admin" ON public.organ_requests;
 CREATE POLICY "orgreq_update_hospital_admin" ON public.organ_requests FOR UPDATE TO authenticated USING (auth.uid() = hospital_id OR has_role(auth.uid(),'admin'));
 
+-- Hospital Patients RLS
+DROP POLICY IF EXISTS "hosp_patients_select_own" ON public.hospital_patients;
+CREATE POLICY "hosp_patients_select_own" ON public.hospital_patients FOR SELECT TO authenticated USING (auth.uid() = hospital_id);
+DROP POLICY IF EXISTS "hosp_patients_insert_own" ON public.hospital_patients;
+CREATE POLICY "hosp_patients_insert_own" ON public.hospital_patients FOR INSERT TO authenticated WITH CHECK (auth.uid() = hospital_id);
+DROP POLICY IF EXISTS "hosp_patients_update_own" ON public.hospital_patients;
+CREATE POLICY "hosp_patients_update_own" ON public.hospital_patients FOR UPDATE TO authenticated USING (auth.uid() = hospital_id);
+DROP POLICY IF EXISTS "hosp_patients_delete_own" ON public.hospital_patients;
+CREATE POLICY "hosp_patients_delete_own" ON public.hospital_patients FOR DELETE TO authenticated USING (auth.uid() = hospital_id);
+
+-- Blood Inventory RLS
+DROP POLICY IF EXISTS "blood_inv_select_own" ON public.blood_inventory;
+CREATE POLICY "blood_inv_select_own" ON public.blood_inventory FOR SELECT TO authenticated USING (auth.uid() = hospital_id);
+DROP POLICY IF EXISTS "blood_inv_insert_own" ON public.blood_inventory;
+CREATE POLICY "blood_inv_insert_own" ON public.blood_inventory FOR INSERT TO authenticated WITH CHECK (auth.uid() = hospital_id);
+DROP POLICY IF EXISTS "blood_inv_update_own" ON public.blood_inventory;
+CREATE POLICY "blood_inv_update_own" ON public.blood_inventory FOR UPDATE TO authenticated USING (auth.uid() = hospital_id);
+
 -- ============ REALTIME ============
 DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications; EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.emergency_requests; EXCEPTION WHEN duplicate_object THEN null; END $$;
@@ -372,3 +419,5 @@ DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.organ_requests;
 DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.badges; EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.certificates; EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.donor_profiles; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.hospital_patients; EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN ALTER PUBLICATION supabase_realtime ADD TABLE public.blood_inventory; EXCEPTION WHEN duplicate_object THEN null; END $$;
