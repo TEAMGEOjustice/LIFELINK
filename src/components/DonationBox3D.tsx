@@ -377,7 +377,14 @@ function Scene() {
 /* ─── Canvas Wrapper ─── */
 export function DonationBox3D({ className = "" }: { className?: string }) {
   return (
-    <div className={`relative w-full ${className}`} style={{ height: "420px" }}>
+    <div
+      className={`relative w-full ${className}`}
+      style={{
+        height: "420px",
+        maskImage: "radial-gradient(ellipse 90% 90% at center, black 55%, transparent 100%)",
+        WebkitMaskImage: "radial-gradient(ellipse 90% 90% at center, black 55%, transparent 100%)",
+      }}
+    >
       <Canvas
         camera={{ position: [0, 1.2, 6.5], fov: 42 }}
         dpr={[1, 1.5]}
@@ -388,11 +395,11 @@ export function DonationBox3D({ className = "" }: { className?: string }) {
           <Scene />
         </Suspense>
       </Canvas>
-      {/* Subtle vignette overlay */}
+      {/* Theme-aware vignette overlay */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background: "radial-gradient(ellipse at center, transparent 50%, rgba(13,13,13,0.4) 100%)",
+          background: "radial-gradient(ellipse at center, transparent 45%, var(--background) 100%)",
         }}
       />
     </div>
