@@ -61,6 +61,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-serif: "Instrument Serif", serif;
 }
 
 :root {
@@ -172,7 +174,8 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -226,6 +229,7 @@
     mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 40%, transparent 80%);
     animation: slide-grid 5s linear infinite;
   }
+
 }
 
 @keyframes slide-grid {
@@ -315,6 +319,16 @@
   }
 }
 
+@keyframes scan-line {
+  0% { transform: translateY(-100%); opacity: 0; }
+  50% { opacity: 0.3; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+.animate-scan-line {
+  animation: scan-line 4s linear infinite;
+}
+
 @keyframes ekg {
   0% {
     stroke-dashoffset: 1000;
@@ -390,4 +404,42 @@
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }
+}
+
+/* TEXT BALANCE */
+h1, h2 {
+  text-wrap: balance;
+}
+
+/* SMOOTH RENDER */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* PREMIUM TRANSITIONS */
+button, .glass-card {
+  transition: all 0.25s ease;
+}
+
+/* SUBTLE GLOW ON HOVER */
+.glass-card:hover {
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.05);
+}
+
+/* BUTTON FEEDBACK */
+button:active {
+  transform: scale(0.96);
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 1s ease forwards;
 }

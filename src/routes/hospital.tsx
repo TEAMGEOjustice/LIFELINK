@@ -17,12 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, MapPin, Plus, Users, CheckCircle, XCircle } from "lucide-react";
+import { Activity, AlertTriangle, MapPin, Plus, Users, CheckCircle, XCircle } from "lucide-react";
 import { HospitalPatients } from "@/components/HospitalPatients";
 import { BloodInventory } from "@/components/BloodInventory";
+import { useSimulationStore } from "@/store/simulationStore";
+import { useMapInit } from "@/hooks/useMapInit";
 
 export const Route = createFileRoute("/hospital")({
   component: () => (
@@ -158,10 +160,18 @@ function HospitalDashboard() {
   const [emergencies, setEmergencies] = useState<EmergencyRow[]>([]);
   const [responses, setResponses] = useState<Record<string, NotifRow[]>>({});
   const [donorNames, setDonorNames] = useState<Record<string, string>>({});
-  const nottoRows = MOCK_NOTTO_TRACKING;
   const [creating, setCreating] = useState(false);
+  const [matchingState, setMatchingState] = useState<"idle" | "matching">("idle");
+  const [aiLogs, setAiLogs] = useState<string[]>([]);
+  const { setSearchRadius, addEmergency, highlightMatchedDonors } = useSimulationStore();
+  const nottoRows = MOCK_NOTTO_TRACKING;
 
-  // Donation confirm dialog state
+  useMapInit(
+    hospital?.latitude && hospital?.longitude
+      ? { latitude: hospital.latitude, longitude: hospital.longitude }
+      : undefined,
+  );
+
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     emergencyId: string;
@@ -247,10 +257,25 @@ function HospitalDashboard() {
 
   const createEmergency = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !hospital?.latitude || !hospital?.longitude) {
+    if (!user || hospital?.latitude == null || hospital?.longitude == null) {
       return toast.error("Hospital location missing — update your profile");
     }
+    const hospLoc = { latitude: hospital.latitude, longitude: hospital.longitude };
     setCreating(true);
+    setMatchingState("matching");
+    setAiLogs(["> Initializing LifeLink AI Engine..."]);
+    await new Promise((r) => setTimeout(r, 600));
+    setAiLogs((p) => [
+      ...p,
+      `> Scanning 15km radius from ${hospital?.hospital_name || "Hospital"}...`,
+    ]);
+    setSearchRadius({ center: hospLoc, radiusKm: 15 });
+    await new Promise((r) => setTimeout(r, 800));
+    setAiLogs((p) => [...p, `> Found active profiles. Filtering for ${form.blood_group}...`]);
+    highlightMatchedDonors(form.blood_group, hospLoc);
+    await new Promise((r) => setTimeout(r, 800));
+    setAiLogs((p) => [...p, "> Applying Trust Score heuristics..."]);
+
     const { data: created, error } = await supabase
       .from("emergency_requests")
       .insert({
@@ -267,13 +292,33 @@ function HospitalDashboard() {
 
     if (error || !created) {
       setCreating(false);
+      setMatchingState("idle");
+      setAiLogs([]);
+      setSearchRadius(null);
       return toast.error(error?.message ?? "Failed to create");
     }
+
+    await new Promise((r) => setTimeout(r, 600));
+    setAiLogs((p) => [...p, "> Optimal targets identified. Dispatching secure alerts..."]);
 
     const { data: count, error: rpcErr } = await supabase.rpc("notify_matched_donors", {
       _emergency_id: created.id,
     });
+
+    await new Promise((r) => setTimeout(r, 1200));
     setCreating(false);
+    setMatchingState("idle");
+    setAiLogs([]);
+    setSearchRadius(null);
+    addEmergency({
+      id: created.id,
+      blood_group: form.blood_group,
+      units_required: form.units_required,
+      urgency: form.urgency_level as "critical" | "high" | "medium" | "low",
+      location: hospLoc,
+      created_at: Date.now(),
+    });
+
     if (rpcErr) {
       toast.error(rpcErr.message);
     } else if (count === 0) {
@@ -314,8 +359,52 @@ function HospitalDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardNav title="Hospital dashboard" />
+    <div
+      className={`min-h-screen ${matchingState === "matching" ? "bg-black text-green-500 overflow-hidden" : "bg-background"}`}
+    >
+      {matchingState === "matching" && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 text-green-500 p-6">
+          <div className="w-full max-w-3xl space-y-8">
+            <div className="flex items-center justify-center">
+              <div className="relative flex size-40 items-center justify-center">
+                <div className="absolute inset-0 rounded-full border border-green-500/30" />
+                <div className="absolute inset-4 rounded-full border border-green-500/20" />
+                <div className="absolute inset-8 rounded-full border border-green-500/10" />
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                  className="absolute inset-0 rounded-full border-t-2 border-green-500 border-r-2 border-r-transparent border-l-2 border-l-transparent border-b-2 border-b-transparent opacity-60"
+                />
+                <Activity className="size-10 animate-pulse text-green-400" />
+              </div>
+            </div>
+
+            <div className="font-mono text-sm sm:text-base bg-black/50 p-6 rounded-lg border border-green-500/30 min-h-[200px] shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+              <h3 className="mb-4 text-green-400 font-bold border-b border-green-500/30 pb-2 flex items-center gap-2">
+                <AlertTriangle className="size-4" /> LIFELINK COMMAND CENTER
+              </h3>
+              <div className="space-y-2">
+                {aiLogs.map((log, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                  >
+                    {log}
+                  </motion.div>
+                ))}
+                <motion.div
+                  animate={{ opacity: [1, 0] }}
+                  transition={{ repeat: Infinity, duration: 0.8 }}
+                  className="inline-block w-2 h-4 bg-green-500 ml-1 translate-y-1"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {matchingState !== "matching" ? <DashboardNav title="Hospital dashboard" /> : null}
       <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
@@ -335,7 +424,6 @@ function HospitalDashboard() {
           </TabsList>
 
           <TabsContent value="emergencies" className="space-y-6">
-            {/* Create Emergency Card */}
             <Card className="glass">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
@@ -373,7 +461,7 @@ function HospitalDashboard() {
                       max={50}
                       value={form.units_required}
                       onChange={(e) =>
-                        setForm({ ...form, units_required: parseInt(e.target.value) || 1 })
+                        setForm({ ...form, units_required: parseInt(e.target.value, 10) || 1 })
                       }
                     />
                   </div>
@@ -408,14 +496,13 @@ function HospitalDashboard() {
                   </div>
                   <div className="sm:col-span-2 lg:col-span-4">
                     <Button type="submit" disabled={creating} className="w-full sm:w-auto">
-                      {creating ? "Matching donors…" : "Raise emergency & notify donors"}
+                      {creating ? "Matching donors..." : "Raise emergency & notify donors"}
                     </Button>
                   </div>
                 </form>
               </CardContent>
             </Card>
 
-            {/* Emergencies List */}
             <div className="space-y-4">
               <h2 className="flex items-center gap-2 text-lg sm:text-xl font-semibold">
                 <Activity className="size-5" /> Active & past emergencies
@@ -446,16 +533,16 @@ function HospitalDashboard() {
                                 <span className="text-gradient-emergency font-bold">
                                   {er.blood_group}
                                 </span>
-                                <span className="text-muted-foreground">·</span>
+                                <span className="text-muted-foreground">-</span>
                                 <span>{er.units_required} units</span>
-                                <span className="text-muted-foreground">·</span>
+                                <span className="text-muted-foreground">-</span>
                                 <span className={urgencyColor(er.urgency_level)}>
                                   {er.urgency_level}
                                 </span>
                               </CardTitle>
                               <p className="mt-1 text-xs text-muted-foreground">
-                                {new Date(er.created_at).toLocaleString()} ·{" "}
-                                {er.patient_info ?? "—"}
+                                {new Date(er.created_at).toLocaleString()} -{" "}
+                                {er.patient_info ?? "-"}
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -515,7 +602,7 @@ function HospitalDashboard() {
                                     </div>
                                     <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                                       <MapPin className="size-3" />{" "}
-                                      {r.distance_km?.toFixed(1) ?? "—"} km
+                                      {r.distance_km?.toFixed(1) ?? "-"} km
                                     </span>
                                   </div>
                                 </div>
@@ -615,7 +702,6 @@ function HospitalDashboard() {
         </Tabs>
       </div>
 
-      {/* Donation confirm dialog */}
       <DonationConfirmDialog
         open={confirmDialog.open}
         onOpenChange={(v) => setConfirmDialog((p) => ({ ...p, open: v }))}

@@ -32,7 +32,7 @@ export function ImpactCounter() {
   return (
     <section id="impact" className="relative py-28">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="glass relative overflow-hidden rounded-3xl p-10 sm:p-14">
+        <div className="glass-card relative overflow-hidden p-10 sm:p-14">
           <div className="absolute inset-0 grid-bg opacity-40" />
           <div className="absolute left-1/2 top-0 h-px w-1/2 -translate-x-1/2 bg-gradient-to-r from-transparent via-primary to-transparent" />
 
