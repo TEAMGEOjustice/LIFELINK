@@ -62,7 +62,7 @@ export function Hero() {
             Become a Donor
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
-          <Link to="/auth" className="group inline-flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-6 py-3.5 text-sm font-semibold text-destructive-foreground backdrop-blur transition-all hover:bg-destructive/20 hover:shadow-[var(--glow-emergency)]">
+          <Link to="/auth" className="group inline-flex items-center gap-2 rounded-xl bg-destructive px-6 py-3.5 text-sm font-semibold text-destructive-foreground backdrop-blur transition-all hover:shadow-[var(--glow-emergency)] hover:brightness-110">
             <Siren className="h-4 w-4 animate-heartbeat" />
             Emergency Request
           </Link>

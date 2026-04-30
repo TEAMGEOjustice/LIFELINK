@@ -92,12 +92,12 @@ export function BloodInventory({ hospitalId }: { hospitalId: string }) {
   };
 
   if (loading) {
-    return <div className="text-sm text-zinc-500">Loading inventory...</div>;
+    return <div className="text-sm text-muted-foreground">Loading inventory...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <Card className="bg-zinc-950 border-zinc-800">
+      <Card className="glass">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5 text-red-500" />
@@ -117,17 +117,17 @@ export function BloodInventory({ hospitalId }: { hospitalId: string }) {
                   key={group} 
                   className={cn(
                     "flex flex-col items-center justify-center p-4 rounded-xl border transition-colors",
-                    isCritical ? "bg-red-950/20 border-red-900/50" : isLow ? "bg-orange-950/20 border-orange-900/50" : "bg-zinc-900/50 border-zinc-800"
+                    isCritical ? "bg-destructive/10 border-destructive/30" : isLow ? "bg-orange-500/10 border-orange-500/30" : "bg-surface/50 border-border"
                   )}
                 >
                   <div className="text-2xl font-bold text-red-500 mb-1">{group}</div>
-                  <div className="text-3xl font-light text-white mb-4">{units} <span className="text-sm text-zinc-500 font-normal">units</span></div>
+                  <div className="text-3xl font-light text-foreground mb-4">{units} <span className="text-sm text-muted-foreground font-normal">units</span></div>
                   
                   <div className="flex items-center gap-2">
                     <Button 
                       variant="outline" 
                       size="icon" 
-                      className="h-8 w-8 rounded-full bg-zinc-900 border-zinc-700 hover:bg-zinc-800 hover:text-red-400"
+                      className="h-8 w-8 rounded-full bg-surface border-border hover:bg-surface-elevated hover:text-red-400"
                       onClick={() => updateUnits(group, -1)}
                       disabled={units === 0}
                     >
@@ -136,7 +136,7 @@ export function BloodInventory({ hospitalId }: { hospitalId: string }) {
                     <Button 
                       variant="outline" 
                       size="icon" 
-                      className="h-8 w-8 rounded-full bg-zinc-900 border-zinc-700 hover:bg-zinc-800 hover:text-green-400"
+                      className="h-8 w-8 rounded-full bg-surface border-border hover:bg-surface-elevated hover:text-green-400"
                       onClick={() => updateUnits(group, 1)}
                     >
                       <Plus className="h-4 w-4" />

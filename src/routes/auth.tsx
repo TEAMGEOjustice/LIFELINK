@@ -52,7 +52,7 @@ function AuthPage() {
             if (window.history.length > 1) router.history.back();
             else navigate({ to: "/" });
           }}
-          className="absolute left-4 top-4 sm:left-6 sm:top-6 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/40 text-muted-foreground backdrop-blur-md transition-all hover:bg-white/10 hover:text-foreground"
+          className="absolute left-4 top-4 sm:left-6 sm:top-6 flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface/60 text-muted-foreground backdrop-blur-md transition-all hover:bg-surface-elevated hover:text-foreground"
           aria-label="Go back"
         >
           <ArrowLeft className="h-5 w-5" />

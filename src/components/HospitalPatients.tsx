@@ -86,7 +86,7 @@ export function HospitalPatients({ hospitalId }: { hospitalId: string }) {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-zinc-950 border-zinc-800">
+      <Card className="glass">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5 text-red-500" />
@@ -101,7 +101,7 @@ export function HospitalPatients({ hospitalId }: { hospitalId: string }) {
               <Input 
                 value={form.name} 
                 onChange={(e) => setForm({...form, name: e.target.value})} 
-                className="bg-zinc-900 border-zinc-800"
+                className="bg-surface border-border"
                 required 
               />
             </div>
@@ -110,17 +110,17 @@ export function HospitalPatients({ hospitalId }: { hospitalId: string }) {
               <Input 
                 value={form.phone} 
                 onChange={(e) => setForm({...form, phone: e.target.value})} 
-                className="bg-zinc-900 border-zinc-800"
+                className="bg-surface border-border"
                 required 
               />
             </div>
             <div className="space-y-2">
               <Label>Blood Group</Label>
               <Select value={form.blood_group} onValueChange={(v) => setForm({ ...form, blood_group: v })}>
-                <SelectTrigger className="bg-zinc-900 border-zinc-800">
+                <SelectTrigger className="bg-surface border-border">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-950 border-zinc-800">
+                <SelectContent className="bg-popover border-border">
                   {BLOOD_GROUPS.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -131,7 +131,7 @@ export function HospitalPatients({ hospitalId }: { hospitalId: string }) {
                 type="date" 
                 value={form.last_donation_date} 
                 onChange={(e) => setForm({...form, last_donation_date: e.target.value})} 
-                className="bg-zinc-900 border-zinc-800"
+                className="bg-surface border-border"
               />
             </div>
             <div className="space-y-2 lg:col-span-2">
@@ -140,7 +140,7 @@ export function HospitalPatients({ hospitalId }: { hospitalId: string }) {
                 value={form.notes} 
                 onChange={(e) => setForm({...form, notes: e.target.value})} 
                 placeholder="E.g., Lives near station, Has high BP"
-                className="bg-zinc-900 border-zinc-800"
+                className="bg-surface border-border"
               />
             </div>
             <div className="sm:col-span-2 lg:col-span-3 flex justify-end">
@@ -152,7 +152,7 @@ export function HospitalPatients({ hospitalId }: { hospitalId: string }) {
         </CardContent>
       </Card>
 
-      <Card className="bg-zinc-950 border-zinc-800">
+      <Card className="glass">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 text-red-500" />
@@ -167,7 +167,7 @@ export function HospitalPatients({ hospitalId }: { hospitalId: string }) {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="text-xs uppercase text-zinc-400 bg-zinc-900/50">
+                <thead className="text-xs uppercase text-muted-foreground bg-surface/50">
                   <tr>
                     <th className="px-4 py-3 rounded-tl-lg">Name</th>
                     <th className="px-4 py-3">Blood Group</th>
@@ -178,23 +178,23 @@ export function HospitalPatients({ hospitalId }: { hospitalId: string }) {
                 </thead>
                 <tbody>
                   {patients.map((p) => (
-                    <tr key={p.id} className="border-b border-zinc-800 hover:bg-zinc-900/20">
+                    <tr key={p.id} className="border-b border-border hover:bg-surface/30">
                       <td className="px-4 py-3 font-medium">{p.name}</td>
                       <td className="px-4 py-3">
                         <span className="text-red-500 font-bold">{p.blood_group}</span>
                       </td>
                       <td className="px-4 py-3">{p.phone}</td>
-                      <td className="px-4 py-3 text-zinc-500 max-w-[200px] truncate" title={p.notes || ""}>
+                      <td className="px-4 py-3 text-muted-foreground max-w-[200px] truncate" title={p.notes || ""}>
                         {p.notes || "-"}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button size="sm" variant="outline" className="h-8 border-zinc-700 bg-transparent hover:bg-zinc-800" asChild>
+                          <Button size="sm" variant="outline" className="h-8 border-border bg-transparent hover:bg-surface" asChild>
                             <a href={`tel:${p.phone}`}>
                               <PhoneCall className="h-3 w-3 mr-1 text-green-500" /> Call
                             </a>
                           </Button>
-                          <Button size="sm" variant="destructive" className="h-8 bg-red-900/20 hover:bg-red-900/40 text-red-500" onClick={() => deletePatient(p.id)}>
+                          <Button size="sm" variant="destructive" className="h-8 bg-destructive/10 hover:bg-destructive/20 text-destructive" onClick={() => deletePatient(p.id)}>
                             Delete
                           </Button>
                         </div>

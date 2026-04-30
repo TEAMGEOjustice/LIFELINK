@@ -119,7 +119,7 @@ function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col bg-black text-white">
+      <div className="flex min-h-screen flex-col bg-background text-foreground">
         <DashboardNav />
         <main className="flex flex-1 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-red-500" />
@@ -129,7 +129,7 @@ function ProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-black text-white">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <DashboardNav />
       <main className="flex-1 p-6 lg:p-8">
         <div className="mx-auto max-w-3xl">
@@ -141,7 +141,7 @@ function ProfilePage() {
           </div>
 
           <form onSubmit={handleSave} className="space-y-6">
-            <Card className="bg-zinc-950 border-zinc-800">
+            <Card className="glass">
               <CardHeader>
                 <CardTitle className="text-xl flex items-center gap-2">
                   <User className="h-5 w-5 text-red-500" />
@@ -156,12 +156,12 @@ function ProfilePage() {
                   <div className="space-y-2">
                     <Label htmlFor="hospital_name">Hospital/Clinic Name</Label>
                     <div className="relative">
-                      <Building2 className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
+                      <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="hospital_name"
                         value={hospitalName}
                         onChange={(e) => setHospitalName(e.target.value)}
-                        className="pl-9 bg-zinc-900 border-zinc-800"
+                        className="pl-9 bg-surface border-border"
                         required
                       />
                     </div>
@@ -172,12 +172,12 @@ function ProfilePage() {
                   <div className="space-y-2">
                     <Label htmlFor="name">{role === "hospital" ? "Contact Person Name" : "Full Name"}</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="pl-9 bg-zinc-900 border-zinc-800"
+                        className="pl-9 bg-surface border-border"
                         required
                       />
                     </div>
@@ -186,13 +186,13 @@ function ProfilePage() {
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
+                      <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="phone"
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        className="pl-9 bg-zinc-900 border-zinc-800"
+                        className="pl-9 bg-surface border-border"
                       />
                     </div>
                   </div>
@@ -203,15 +203,15 @@ function ProfilePage() {
                   <Input
                     value={user?.email || ""}
                     disabled
-                    className="bg-zinc-900 border-zinc-800 text-zinc-500"
+                    className="bg-surface border-border text-muted-foreground"
                   />
-                  <p className="text-xs text-zinc-500">Email cannot be changed directly.</p>
+                  <p className="text-xs text-muted-foreground">Email cannot be changed directly.</p>
                 </div>
               </CardContent>
             </Card>
 
             {role === "donor" && (
-              <Card className="bg-zinc-950 border-zinc-800">
+              <Card className="glass">
                 <CardHeader>
                   <CardTitle className="text-xl flex items-center gap-2">
                     <Activity className="h-5 w-5 text-red-500" />
@@ -222,12 +222,12 @@ function ProfilePage() {
                   <div className="space-y-2 max-w-sm">
                     <Label>Blood Group</Label>
                     <Select value={bloodGroup} onValueChange={setBloodGroup}>
-                      <SelectTrigger className="bg-zinc-900 border-zinc-800">
+                      <SelectTrigger className="bg-surface border-border">
                         <SelectValue placeholder="Select group" />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-950 border-zinc-800">
+                      <SelectContent className="bg-popover border-border">
                         {BLOOD_GROUPS.map((g) => (
-                          <SelectItem key={g} value={g} className="focus:bg-zinc-900">
+                          <SelectItem key={g} value={g} className="focus:bg-surface">
                             {g}
                           </SelectItem>
                         ))}
@@ -235,10 +235,10 @@ function ProfilePage() {
                     </Select>
                   </div>
 
-                  <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+                  <div className="flex items-center justify-between rounded-lg border border-border bg-surface/50 p-4">
                     <div className="space-y-0.5">
-                      <Label className="text-base font-semibold text-white">Available for Donation</Label>
-                      <p className="text-sm text-zinc-400">
+                      <Label className="text-base font-semibold text-foreground">Available for Donation</Label>
+                      <p className="text-sm text-muted-foreground">
                         Turn this off if you are temporarily unable to donate (e.g., recently donated, health issues).
                       </p>
                     </div>
