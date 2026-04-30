@@ -44,7 +44,7 @@ export function DashboardNav({ title }: { title: string }) {
           {/* Back button */}
           <button
             onClick={handleBack}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
             aria-label="Go back"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -67,8 +67,8 @@ export function DashboardNav({ title }: { title: string }) {
             <Link
               key={link.to}
               to={link.to}
-              className="rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-white/5 hover:text-foreground transition-colors"
-              activeProps={{ className: "rounded-lg px-3 py-1.5 text-sm text-foreground bg-white/5" }}
+              className="rounded-lg px-3 py-1.5 text-sm text-muted-foreground hover:bg-foreground/5 hover:text-foreground transition-colors"
+              activeProps={{ className: "rounded-lg px-3 py-1.5 text-sm text-foreground bg-foreground/5" }}
             >
               {link.label}
             </Link>
@@ -93,7 +93,7 @@ export function DashboardNav({ title }: { title: string }) {
           {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileOpen((o) => !o)}
-            className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5"
+            className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/5"
             aria-label="Menu"
           >
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -109,8 +109,8 @@ export function DashboardNav({ title }: { title: string }) {
               key={link.to}
               to={link.to}
               onClick={() => setMobileOpen(false)}
-              className="block rounded-lg px-4 py-2.5 text-sm text-muted-foreground hover:bg-white/5 hover:text-foreground"
-              activeProps={{ className: "block rounded-lg px-4 py-2.5 text-sm text-foreground bg-white/5" }}
+              className="block rounded-lg px-4 py-2.5 text-sm text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+              activeProps={{ className: "block rounded-lg px-4 py-2.5 text-sm text-foreground bg-foreground/5" }}
             >
               {link.label}
             </Link>
@@ -121,7 +121,7 @@ export function DashboardNav({ title }: { title: string }) {
               navigate({ to: "/" });
               setMobileOpen(false);
             }}
-            className="mt-1 w-full rounded-lg px-4 py-2.5 text-left text-sm text-destructive hover:bg-white/5"
+            className="mt-1 w-full rounded-lg px-4 py-2.5 text-left text-sm text-destructive hover:bg-foreground/5"
           >
             <LogOut className="size-3.5 inline mr-2" />
             Sign out

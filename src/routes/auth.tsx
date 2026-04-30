@@ -123,37 +123,9 @@ function LoginForm() {
         {busy ? "Signing in…" : "Sign in"}
       </Button>
 
-      <div className="relative my-4">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-white/10" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">Or</span>
-        </div>
-      </div>
+    
 
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => {
-            setEmail("donor@demo.com");
-            setPassword("password123");
-          }}
-        >
-          Demo Donor
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => {
-            setEmail("hospital@demo.com");
-            setPassword("password123");
-          }}
-        >
-          Demo Hospital
-        </Button>
-      </div>
+    
     </form>
   );
 }

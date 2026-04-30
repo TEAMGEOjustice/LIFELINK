@@ -53,11 +53,12 @@ export function Navbar() {
     <header className="fixed top-0 left-0 right-0 z-50">
       <div className="mx-auto max-w-7xl px-4 pt-3 sm:px-6 sm:pt-4">
         <nav
-          className={`flex items-center justify-between rounded-2xl px-3 py-2.5 sm:px-5 sm:py-3 transition-all duration-300 ${
-            scrolled
-              ? "border border-white/10 bg-black/70 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
-              : "border border-white/[0.06] bg-black/40 backdrop-blur-md"
-          }`}
+          className="flex items-center justify-between rounded-2xl px-3 py-2.5 sm:px-5 sm:py-3 transition-all duration-300 backdrop-blur-xl"
+          style={{
+            background: scrolled ? "var(--nav-bg-scrolled)" : "var(--nav-bg-default)",
+            border: `1px solid ${scrolled ? "var(--nav-border-scrolled)" : "var(--nav-border-default)"}`,
+            boxShadow: scrolled ? "var(--nav-shadow-scrolled)" : "none",
+          }}
         >
           <Link to="/" className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             <div className="relative">
@@ -77,12 +78,13 @@ export function Navbar() {
             {capsule && (
               <span
                 aria-hidden
-                className="absolute top-1/2 -translate-y-1/2 rounded-full bg-white/[0.06] transition-all duration-300 ease-out"
+                className="absolute top-1/2 -translate-y-1/2 rounded-full transition-all duration-300 ease-out"
                 style={{
                   left: capsule.left,
                   width: capsule.width,
                   height: 34,
                   transitionProperty: "left, width, opacity",
+                  background: "var(--nav-capsule-bg)",
                 }}
               />
             )}
@@ -123,7 +125,8 @@ export function Navbar() {
               <>
                 <Link
                   to="/auth"
-                  className="hidden sm:inline-flex rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-all duration-150 hover:text-foreground hover:bg-white/5"
+                  className="hidden sm:inline-flex rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-all duration-150 hover:text-foreground"
+                  style={{ ["--tw-bg-opacity" as string]: 1 }}
                 >
                   Sign in
                 </Link>
@@ -137,7 +140,8 @@ export function Navbar() {
             )}
             <button
               onClick={() => setOpen((o) => !o)}
-              className="md:hidden ml-1 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5"
+              className="md:hidden ml-1 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"
+              style={{ background: "transparent" }}
               aria-label="Menu"
             >
               {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -147,14 +151,20 @@ export function Navbar() {
 
         {/* Mobile menu */}
         {open && (
-          <div className="md:hidden mt-2 rounded-2xl border border-white/10 bg-black/80 backdrop-blur-xl p-2 animate-fade-in">
+          <div
+            className="md:hidden mt-2 rounded-2xl backdrop-blur-xl p-2 animate-fade-in"
+            style={{
+              background: "var(--nav-mobile-bg)",
+              border: "1px solid var(--nav-border-scrolled)",
+            }}
+          >
             {navItems.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
                 onClick={() => setOpen(false)}
-                className="block rounded-lg px-4 py-2.5 text-sm text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                activeProps={{ className: "block rounded-lg px-4 py-2.5 text-sm text-foreground bg-white/5" }}
+                className="block rounded-lg px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground"
+                activeProps={{ className: "block rounded-lg px-4 py-2.5 text-sm text-foreground bg-foreground/5" }}
               >
                 {item.label}
               </Link>
@@ -163,7 +173,7 @@ export function Navbar() {
               <Link
                 to={dashboardTo}
                 onClick={() => setOpen(false)}
-                className="block rounded-lg px-4 py-2.5 text-sm text-primary font-medium hover:bg-white/5"
+                className="block rounded-lg px-4 py-2.5 text-sm text-primary font-medium"
               >
                 <LayoutDashboard className="h-3.5 w-3.5 inline mr-2" />
                 Dashboard
@@ -172,7 +182,7 @@ export function Navbar() {
               <Link
                 to="/auth"
                 onClick={() => setOpen(false)}
-                className="block rounded-lg px-4 py-2.5 text-sm text-primary font-medium hover:bg-white/5"
+                className="block rounded-lg px-4 py-2.5 text-sm text-primary font-medium"
               >
                 Sign in / Get started
               </Link>
@@ -183,3 +193,4 @@ export function Navbar() {
     </header>
   );
 }
+
