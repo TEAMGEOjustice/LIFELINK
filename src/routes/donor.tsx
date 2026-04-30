@@ -291,50 +291,6 @@ function DonorDashboard() {
 
   const activeEmergency = notifications.find(n => n.status === "sent");
 
-  if (activeEmergency) {
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-destructive/95 text-destructive-foreground p-6 overflow-hidden">
-        <motion.div 
-           animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }}
-           transition={{ repeat: Infinity, duration: 1.5 }}
-           className="absolute inset-0 border-8 border-red-500/50 pointer-events-none"
-        />
-        <div className="w-full max-w-lg space-y-8 text-center z-10">
-          <Siren className="size-24 mx-auto animate-pulse" />
-          <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-widest text-white drop-shadow-[0_0_15px_rgba(255,0,0,0.8)]">
-            Emergency Alert
-          </h1>
-          <div className="bg-black/40 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl">
-            <p className="text-xl sm:text-2xl font-bold mb-3">{activeEmergency.message}</p>
-            <p className="text-base opacity-90 flex items-center justify-center gap-2">
-              <MapPin className="size-5" /> 
-              {activeEmergency.distance_km != null ? `${activeEmergency.distance_km.toFixed(1)} km away` : "Nearby"}
-              <span className="opacity-50">·</span>
-              {timeAgo(activeEmergency.created_at)}
-            </p>
-          </div>
-
-          <div className="pt-8 space-y-4">
-            <Button 
-               size="lg" 
-               className="w-full text-xl h-16 sm:h-20 bg-white text-destructive hover:bg-gray-200 shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_50px_rgba(255,255,255,0.5)] transition-all font-black uppercase tracking-wider"
-               onClick={() => respond(activeEmergency.id, true)}
-            >
-               ACCEPT EMERGENCY
-            </Button>
-            <Button 
-               size="lg" 
-               variant="ghost"
-               className="w-full text-white/60 hover:text-white hover:bg-white/10"
-               onClick={() => respond(activeEmergency.id, false)}
-            >
-               I cannot help right now
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
